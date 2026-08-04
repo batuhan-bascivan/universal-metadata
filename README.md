@@ -1,9 +1,5 @@
 # Universal Metadata
 
-<p align="center">
-  <img src="build/icon.ico" alt="Universal Metadata Logo" width="128" height="128">
-</p>
-
 A desktop application for reading and editing file metadata entirely on your machine, without any upload or cloud dependency.
 
 ## Description
