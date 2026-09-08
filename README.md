@@ -1,6 +1,13 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="src/assets/newlogo.png">
+    <img src="src/assets/newlogo-black.png" alt="Universal Metadata Logo" width="128" height="128" />
+  </picture>
+</p>
+
 # Universal Metadata
 
-A desktop application for reading and editing file metadata entirely on your machine, without any upload or cloud dependency.
+<p align="center">A desktop application for reading and editing file metadata entirely on your machine, without any upload or cloud dependency.</p>
 
 ## Description
 
