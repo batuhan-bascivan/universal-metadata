@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
+import logoPng from "@/assets/newlogo.png";
 import { FolderOpen, Save, X, RotateCcw, FileSearch, Plus, CheckCircle2, AlertCircle, Loader2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import DragDropArea from "@/components/DragDropArea";
@@ -53,15 +54,12 @@ const Index = () => {
 
   const selectedFile = files.find((f) => f.id === selectedId) ?? null;
 
-  // ── helpers ───────────────────────────────────────────────────────────────
   const updateFile = useCallback((id: string, patch: Partial<LoadedFile>) => {
     setFiles((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
   }, []);
 
-  // ── Load files ────────────────────────────────────────────────────────────
   const handleFilesAdded = useCallback(async (newFiles: File[]) => {
     setShowDrop(false);
-
     const entries: LoadedFile[] = newFiles.map((file) => ({
       id: crypto.randomUUID(),
       file,
@@ -74,14 +72,12 @@ const Index = () => {
 
     setFiles((prev) => {
       const merged = [...prev, ...entries];
-      // Auto-select the first new file if nothing selected
       if (!selectedId) {
         setTimeout(() => setSelectedId(entries[0].id), 0);
       }
       return merged;
     });
 
-    // Load metadata for each file
     for (const entry of entries) {
       const path = window.electron?.getFilePath(entry.file);
       if (!path) {
@@ -89,9 +85,7 @@ const Index = () => {
         toast.error(`Cannot get path for ${entry.file.name}`);
         continue;
       }
-
       updateFile(entry.id, { filePath: path, progress: 30 });
-
       try {
         const result = await window.electron.readMetadata(path);
         if (!result.success || !result.data) {
@@ -116,7 +110,6 @@ const Index = () => {
     }
   }, [selectedId, updateFile]);
 
-  // ── Edit ──────────────────────────────────────────────────────────────────
   const handleMetadataChange = useCallback((key: string, value: string) => {
     if (!selectedId) return;
     setFiles((prev) =>
@@ -161,7 +154,6 @@ const Index = () => {
     );
   }, [selectedId]);
 
-  // ── Remove a file from the list ───────────────────────────────────────────
   const handleRemoveFile = useCallback((id: string) => {
     setFiles((prev) => {
       const next = prev.filter((f) => f.id !== id);
@@ -172,7 +164,6 @@ const Index = () => {
     });
   }, [selectedId]);
 
-  // ── Select destination ────────────────────────────────────────────────────
   const handleSelectDestination = useCallback(async () => {
     if (window.electron?.selectDirectory) {
       const path = await window.electron.selectDirectory();
@@ -185,39 +176,31 @@ const Index = () => {
     }
   }, []);
 
-  // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
     if (!selectedFile || !selectedFile.filePath) return;
-
     if (!destinationFolder) {
       toast.error("Please select a destination folder first.");
       return;
     }
-
     const dirtyKeys = Object.keys(selectedFile.metadata).filter(
       (k) => selectedFile.metadata[k] !== selectedFile.originalMetadata[k]
     );
-
     if (dirtyKeys.length === 0) {
       toast.info("No changes to save.");
       return;
     }
-
     updateFile(selectedFile.id, { status: "saving", progress: 30 });
-
     try {
       const result = await window.electron.writeMetadata(
         selectedFile.filePath,
         destinationFolder,
         selectedFile.metadata
       );
-
       if (!result.success) {
         updateFile(selectedFile.id, { status: "ready", progress: 0 });
         toast.error(`Save failed: ${result.error}`);
         return;
       }
-
       updateFile(selectedFile.id, { status: "saved", progress: 100, savedPath: result.path });
       toast.success(`Saved with ${dirtyKeys.length} change${dirtyKeys.length > 1 ? "s" : ""}!`);
     } catch (err: unknown) {
@@ -227,7 +210,6 @@ const Index = () => {
     }
   }, [selectedFile, destinationFolder, updateFile]);
 
-  // ── Derived ───────────────────────────────────────────────────────────────
   const dirtyCount = selectedFile
     ? Object.keys(selectedFile.metadata).filter(
         (k) => selectedFile.metadata[k] !== selectedFile.originalMetadata[k]
@@ -236,38 +218,41 @@ const Index = () => {
 
   const isLoading = selectedFile?.status === "loading" || selectedFile?.status === "saving";
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen flex flex-col items-center p-4 sm:p-8 md:p-10 relative" style={{ justifyContent: files.length === 0 ? 'center' : 'flex-start', paddingBottom: files.length === 0 ? '30vh' : undefined }}>
-      {/* Top-right controls */}
-      <div className="absolute top-4 right-4 flex gap-2">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={handleSelectDestination} className="rounded-lg">
-              <FolderOpen className="h-[1.2rem] w-[1.2rem]" />
-              <span className="sr-only">Select Destination Folder</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{destinationFolder ? `Destination: ${destinationFolder}` : "Select Destination Folder"}</p>
-          </TooltipContent>
-        </Tooltip>
-        <ModeToggle />
+    <div className="min-h-screen flex flex-col items-center p-4 sm:p-8 md:p-12 relative" style={{ justifyContent: files.length === 0 ? 'center' : 'flex-start', paddingBottom: files.length === 0 ? '30vh' : undefined }}>
+      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 sm:px-6 h-14 border-b border-border bg-background/80 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <img src={logoPng} alt="Universal Metadata Logo" className="app-logo h-7 w-7 object-contain invert dark:invert-0" />
+          <span className="font-semibold text-sm text-foreground hidden sm:block">Universal Metadata</span>
+        </div>
+        <div className="flex gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="icon" onClick={handleSelectDestination} className="rounded-lg">
+                  <FolderOpen className="h-[1.2rem] w-[1.2rem]" />
+                  <span className="sr-only">Select Destination Folder</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{destinationFolder ? `Destination: ${destinationFolder}` : "Select Destination Folder"}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <ModeToggle />
+        </div>
       </div>
 
-        <div className="w-full max-w-6xl mx-auto flex flex-col gap-6">
-        {/* Header */}
-        <header className="text-center pt-2">
+      <div className="w-full max-w-6xl mx-auto flex flex-col gap-6 mt-14">
+        <header className="text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-foreground mb-2">Universal Metadata</h1>
           <p className="text-lg text-muted-foreground">Drop any file, edit its metadata, save a copy.</p>
         </header>
 
-        {/* Empty state */}
         {files.length === 0 && !showDrop && (
           <DragDropArea onFilesAdded={handleFilesAdded} label="Drag & Drop files here" />
         )}
 
-        {/* Add more files overlay */}
         {showDrop && (
           <div className="relative">
             <DragDropArea onFilesAdded={handleFilesAdded} label="Drop more files here" />
@@ -282,11 +267,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Main layout: file list + editor */}
         {files.length > 0 && !showDrop && (
           <div className="grid grid-cols-[260px_1fr] gap-4 items-start">
-
-            {/* ── Left: file list ──────────────────────────────────────── */}
             <div className="flex flex-col gap-2 -ml-6">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -327,13 +309,13 @@ const Index = () => {
                         )}
                       >
                         <div className="flex-shrink-0">{STATUS_ICONS[f.status]}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium truncate text-foreground">{f.file.name}</p>
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <p className="text-xs font-medium text-foreground break-all line-clamp-2 leading-tight">{f.file.name}</p>
                           {dirty > 0 && (
                             <p className="text-[10px] text-primary mt-0.5">{dirty} modified</p>
                           )}
                           {f.status === "saved" && (
-                            <p className="text-[10px] text-green-500 mt-0.5">Saved ✓</p>
+                            <p className="text-[10px] text-green-500 mt-0.5">Saved</p>
                           )}
                         </div>
                         <Button
@@ -351,11 +333,9 @@ const Index = () => {
               </ScrollArea>
             </div>
 
-            {/* ── Right: editor ────────────────────────────────────────── */}
             <div className="flex flex-col gap-4">
               {selectedFile ? (
                 <>
-                  {/* File preview + actions */}
                   <div className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
                       <FilePreview fileName={selectedFile.file.name} fileSize={selectedFile.file.size} />
@@ -396,7 +376,7 @@ const Index = () => {
 
                   {!destinationFolder && (
                     <p className="text-xs text-amber-500">
-                      ⚠️ No destination folder — click the folder icon (top-right) to choose one.
+                      No destination folder click the folder icon (top-right) to choose one
                     </p>
                   )}
 

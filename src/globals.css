@@ -68,3 +68,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+.app-logo {
+  object-fit: contain;
+}

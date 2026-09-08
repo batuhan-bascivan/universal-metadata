@@ -14,7 +14,6 @@ interface MetadataTableProps {
   originalMetadata: Record<string, string>;
 }
 
-// Tags that cannot be edited (structural / read-only)
 const READONLY_TAGS = new Set([
   "FileSize", "FileModifyDate", "FileAccessDate", "FileCreateDate",
   "FileInodeChangeDate", "FilePermissions", "FileType", "FileTypeExtension",
@@ -68,7 +67,6 @@ const MetadataRow: React.FC<RowProps> = ({
           : "hover:bg-muted/60"
       )}
     >
-      {/* Key */}
       <div className="flex items-center gap-1.5 min-w-0">
         {isReadonly && (
           <Lock className="w-3 h-3 text-muted-foreground/50 flex-shrink-0" />
@@ -88,8 +86,6 @@ const MetadataRow: React.FC<RowProps> = ({
           </Badge>
         )}
       </div>
-
-      {/* Value */}
       <div className="min-w-0">
         {editing ? (
           <Input
@@ -108,8 +104,6 @@ const MetadataRow: React.FC<RowProps> = ({
           </span>
         )}
       </div>
-
-      {/* Actions */}
       <div className="flex items-center gap-1 flex-shrink-0">
         {editing ? (
           <>
@@ -182,7 +176,6 @@ const MetadataTable: React.FC<MetadataTableProps> = ({
         return matchesSearch && matchesFilter;
       })
       .sort(([a], [b]) => {
-        // Edited tags first, then alphabetical
         const aDirty = metadata[a] !== originalMetadata[a];
         const bDirty = metadata[b] !== originalMetadata[b];
         if (aDirty !== bDirty) return aDirty ? -1 : 1;
@@ -197,7 +190,6 @@ const MetadataTable: React.FC<MetadataTableProps> = ({
 
   return (
     <div className="flex flex-col gap-3 animate-fade-in">
-      {/* Toolbar */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
@@ -222,7 +214,6 @@ const MetadataTable: React.FC<MetadataTableProps> = ({
             {dirtyCount} modified
           </Badge>
         )}
-        {/* Clear all button */}
         <Button
           variant="outline"
           size="sm"
@@ -234,16 +225,12 @@ const MetadataTable: React.FC<MetadataTableProps> = ({
           Clear all
         </Button>
       </div>
-
-      {/* Table */}
       <div className="rounded-xl border border-border overflow-hidden">
-        {/* Header */}
         <div className="grid grid-cols-[minmax(160px,220px)_1fr_auto] gap-3 px-4 py-2 bg-muted/50 border-b border-border">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tag</span>
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Value</span>
           <span className="w-16" />
         </div>
-
         <ScrollArea className="h-[360px]">
           {entries.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
@@ -266,7 +253,6 @@ const MetadataTable: React.FC<MetadataTableProps> = ({
           )}
         </ScrollArea>
       </div>
-
       <p className="text-xs text-muted-foreground text-right">
         {entries.length} tag{entries.length !== 1 ? "s" : ""} shown
       </p>

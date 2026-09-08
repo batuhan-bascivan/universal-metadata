@@ -51,7 +51,6 @@ const DragDropArea: React.FC<DragDropAreaProps> = ({
       if (selectedFiles.length > 0) {
         onFilesAdded(selectedFiles);
       }
-      // Reset input so same file can be re-selected
       e.target.value = "";
     },
     [onFilesAdded]
